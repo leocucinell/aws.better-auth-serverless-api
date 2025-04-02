@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { LambdaEvent, LambdaContext } from "hono/aws-lambda";
 import { handle } from "hono/aws-lambda";
 import { logger } from "hono/logger";
+import { getCookie } from "hono/cookie";
 import { auth } from "../../../utils/auth";
 
 type Bindings = {
@@ -12,16 +13,11 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 app.use(logger());
 
-// app.post("/*", (c) => {
-//   console.log("HELLO WORLD");
-//   return c.json({
-//     isBase64Encoded: c.env.event.isBase64Encoded,
-//     awsRequestId: c.env.lambdaContext.awsRequestId,
-//   });
-// });
-
 // TODO: add body validation with zod
 app.post("/auth/signup", async (c) => {
+  console.log("REQUEST", c.req);
+  const allCookies = getCookie(c);
+  console.log("ALL COOKIES", allCookies);
   const { email, password, name } = await c.req.json();
   console.log(email, password, name);
   const user = await auth.api.signUpEmail({

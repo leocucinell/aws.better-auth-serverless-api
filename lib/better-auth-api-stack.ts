@@ -35,30 +35,37 @@ export class BetterAuthApiStack extends cdk.Stack {
     usagePlan.addApiKey(apiKey);
 
     // SECTION - Lambda Functions
-    const authLambdaItem = new lambdaNodejs.NodejsFunction(
-      this,
-      "AuthLambdaItem",
-      {
-        entry: "lib/src/lambdas/auth.ts",
-        handler: "handler",
-        timeout: cdk.Duration.seconds(25),
-        environment: {
-          DATABASE_URL: process.env.DATABASE_URL as string,
-        },
-      }
-    );
+    const signupLambda = new lambdaNodejs.NodejsFunction(this, "signupLambda", {
+      entry: "lib/src/lambdas/signup.ts",
+      handler: "handler",
+      timeout: cdk.Duration.seconds(25),
+      environment: {
+        DATABASE_URL: process.env.DATABASE_URL as string,
+      },
+    });
+
+    const loginLambda = new lambdaNodejs.NodejsFunction(this, "loginLambda", {
+      entry: "lib/src/lambdas/login.ts",
+      handler: "handler",
+      timeout: cdk.Duration.seconds(25),
+      environment: {
+        DATABASE_URL: process.env.DATABASE_URL as string,
+      },
+    });
 
     // SECTION - resource definitions
     const authResource = api.root.addResource("auth");
     const signupResource = authResource.addResource("signup");
+    const loginResource = authResource.addResource("login");
 
     // SECTION - API Gateway Method Definitions
-    const authIntegration = new apigw.LambdaIntegration(authLambdaItem);
+    const signupIntegration = new apigw.LambdaIntegration(signupLambda);
+    const loginIntegration = new apigw.LambdaIntegration(loginLambda);
 
     // SECTION - API Gateway Method Definitions
-    // api.root.addMethod("POST", authIntegration);
-    signupResource.addMethod("POST", authIntegration);
-
+    // api.root.addMethod("POST", signupIntegration);
+    signupResource.addMethod("POST", signupIntegration);
+    loginResource.addMethod("POST", loginIntegration);
     // SECTION - Outputs
     new CfnOutput(this, "ApiUrl", {
       value: api.url,

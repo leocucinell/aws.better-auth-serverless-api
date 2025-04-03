@@ -53,19 +53,36 @@ export class BetterAuthApiStack extends cdk.Stack {
       },
     });
 
+    const getSessionLambda = new lambdaNodejs.NodejsFunction(
+      this,
+      "getSessionLambda",
+      {
+        entry: "lib/src/lambdas/getSession.ts",
+        handler: "handler",
+        timeout: cdk.Duration.seconds(25),
+        environment: {
+          DATABASE_URL: process.env.DATABASE_URL as string,
+        },
+      }
+    );
+
     // SECTION - resource definitions
     const authResource = api.root.addResource("auth");
     const signupResource = authResource.addResource("signup");
     const loginResource = authResource.addResource("login");
+    const sessionResource = authResource.addResource("session");
 
     // SECTION - API Gateway Method Definitions
     const signupIntegration = new apigw.LambdaIntegration(signupLambda);
     const loginIntegration = new apigw.LambdaIntegration(loginLambda);
+    const getSessionIntegration = new apigw.LambdaIntegration(getSessionLambda);
 
     // SECTION - API Gateway Method Definitions
     // api.root.addMethod("POST", signupIntegration);
     signupResource.addMethod("POST", signupIntegration);
     loginResource.addMethod("POST", loginIntegration);
+    sessionResource.addMethod("GET", getSessionIntegration);
+
     // SECTION - Outputs
     new CfnOutput(this, "ApiUrl", {
       value: api.url,

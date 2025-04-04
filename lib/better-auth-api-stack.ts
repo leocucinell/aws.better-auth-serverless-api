@@ -35,23 +35,18 @@ export class BetterAuthApiStack extends cdk.Stack {
     usagePlan.addApiKey(apiKey);
 
     // SECTION - Lambda Functions
-    const signupLambda = new lambdaNodejs.NodejsFunction(this, "signupLambda", {
-      entry: "lib/src/lambdas/signup.ts",
-      handler: "handler",
-      timeout: cdk.Duration.seconds(25),
-      environment: {
-        DATABASE_URL: process.env.DATABASE_URL as string,
-      },
-    });
-
-    const loginLambda = new lambdaNodejs.NodejsFunction(this, "loginLambda", {
-      entry: "lib/src/lambdas/login.ts",
-      handler: "handler",
-      timeout: cdk.Duration.seconds(25),
-      environment: {
-        DATABASE_URL: process.env.DATABASE_URL as string,
-      },
-    });
+    const authHandlerLambda = new lambdaNodejs.NodejsFunction(
+      this,
+      "authHandlerLambda",
+      {
+        entry: "lib/src/lambdas/auth.ts",
+        handler: "handler",
+        timeout: cdk.Duration.seconds(25),
+        environment: {
+          DATABASE_URL: process.env.DATABASE_URL as string,
+        },
+      }
+    );
 
     const getSessionLambda = new lambdaNodejs.NodejsFunction(
       this,
@@ -67,21 +62,20 @@ export class BetterAuthApiStack extends cdk.Stack {
     );
 
     // SECTION - resource definitions
-    const authResource = api.root.addResource("auth");
-    const signupResource = authResource.addResource("signup");
-    const loginResource = authResource.addResource("login");
-    const sessionResource = authResource.addResource("session");
+    const apiResource = api.root.addResource("api");
+    const authResource = apiResource.addResource("auth");
+    const authProxyResource = authResource.addResource("{proxy+}");
+    // const sessionResource = authResource.addResource("session");
 
     // SECTION - API Gateway Method Definitions
-    const signupIntegration = new apigw.LambdaIntegration(signupLambda);
-    const loginIntegration = new apigw.LambdaIntegration(loginLambda);
-    const getSessionIntegration = new apigw.LambdaIntegration(getSessionLambda);
+    const authHandlerIntegration = new apigw.LambdaIntegration(
+      authHandlerLambda
+    );
+    // const getSessionIntegration = new apigw.LambdaIntegration(getSessionLambda);
 
     // SECTION - API Gateway Method Definitions
-    // api.root.addMethod("POST", signupIntegration);
-    signupResource.addMethod("POST", signupIntegration);
-    loginResource.addMethod("POST", loginIntegration);
-    sessionResource.addMethod("GET", getSessionIntegration);
+    authProxyResource.addMethod("ANY", authHandlerIntegration);
+    // sessionResource.addMethod("GET", getSessionIntegration);
 
     // SECTION - Outputs
     new CfnOutput(this, "ApiUrl", {

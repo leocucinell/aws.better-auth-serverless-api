@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../lib/src/db/";
 import * as schema from "../lib/src/db/schemas/auth-schema";
+import { openAPI } from "better-auth/plugins";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -13,9 +14,16 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  advanced: {
-    crossSubDomainCookies: {
-      enabled: true,
-    },
-  },
+  plugins: [openAPI()],
+  //   advanced: {
+  //     cookies: {
+  //       sessionToken: {
+  //         attributes: {
+  //           sameSite: "none",
+  //           secure: true,
+  //           partitioned: true, // New browser standards will mandate this for foreign cookies
+  //         },
+  //       },
+  //     },
+  //   },
 });
